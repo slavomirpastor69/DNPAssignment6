@@ -1,0 +1,72 @@
+@page "/users/create"
+@inject IUserService UserService
+
+<PageTitle>Add user</PageTitle>
+
+<h1>Add user</h1>
+
+<form @onsubmit="AddUserAsync" style="max-width: 30rem">
+    <div class="mb-3">
+        <label class="form-label" for="userName">Username</label>
+        <input class="form-control" id="userName" @bind="userName" autocomplete="off"/>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-control" id="password" type="password" @bind="password" autocomplete="new-password"/>
+    </div>
+
+    <button class="btn btn-primary" type="submit" disabled="@isSubmitting">Add user</button>
+</form>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-3" role="alert">@errorMessage</div>
+}
+
+@if (createdUser != null)
+{
+    <div class="alert alert-success mt-3" role="status">
+        User "@createdUser.UserName" was added with ID @createdUser.Id.
+    </div>
+}
+
+@code {
+    private string userName = "";
+    private string password = "";
+    private UserDto? createdUser;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task AddUserAsync()
+    {
+        createdUser = null;
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Enter both a username and a password.";
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            createdUser = await UserService.AddUserAsync(new CreateUserDto
+            {
+                UserName = userName,
+                Password = password
+            });
+            userName = "";
+            password = "";
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

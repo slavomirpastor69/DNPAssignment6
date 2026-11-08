@@ -1,0 +1,207 @@
+@page "/posts/{Id:int}"
+@inject IPostService PostService
+@inject ICommentService CommentService
+
+<PageTitle>@(post?.Title ?? "Post")</PageTitle>
+
+<p><a href="posts">Back to posts</a></p>
+
+@if (loadErrorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">@loadErrorMessage</div>
+}
+else if (post == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div style="max-width: 45rem">
+        @if (isEditing)
+        {
+            <form @onsubmit="SavePostAsync" class="mb-3">
+                <div class="mb-3">
+                    <label class="form-label" for="editTitle">Title</label>
+                    <input class="form-control" id="editTitle" @bind="editTitle" autocomplete="off"/>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="editBody">Body</label>
+                    <textarea class="form-control" id="editBody" rows="6" @bind="editBody"></textarea>
+                </div>
+
+                <button class="btn btn-primary" type="submit" disabled="@isSaving">Save</button>
+                <button class="btn btn-secondary" type="button" @onclick="() => isEditing = false">Cancel</button>
+            </form>
+
+            @if (editErrorMessage != null)
+            {
+                <div class="alert alert-danger" role="alert">@editErrorMessage</div>
+            }
+        }
+        else
+        {
+            <h1>@post.Title</h1>
+            <p class="text-body-secondary">by @(post.AuthorName ?? "Unknown user")</p>
+            <p style="white-space: pre-wrap">@post.Body</p>
+
+            <AuthorizeView>
+                @if (context.User.GetUserId() == post.UserId)
+                {
+                    <button class="btn btn-outline-secondary" type="button" @onclick="StartEditing">Edit post</button>
+                }
+            </AuthorizeView>
+        }
+
+        <hr/>
+
+        <h2 class="h4">Comments</h2>
+
+        @if (comments.Count == 0)
+        {
+            <p>There are no comments yet.</p>
+        }
+        else
+        {
+            <ul class="list-group mb-3">
+                @foreach (CommentDto comment in comments)
+                {
+                    <li class="list-group-item">
+                        <div class="fw-semibold">@(comment.UserName ?? "Unknown user")</div>
+                        <div style="white-space: pre-wrap">@comment.Body</div>
+                    </li>
+                }
+            </ul>
+        }
+
+        <AuthorizeView>
+            <Authorized>
+                <form @onsubmit="AddCommentAsync">
+                    <div class="mb-3">
+                        <label class="form-label" for="comment">Add a comment</label>
+                        <textarea class="form-control" id="comment" rows="3" @bind="commentBody"></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" type="submit" disabled="@isSubmitting">Add comment</button>
+                </form>
+
+                @if (commentErrorMessage != null)
+                {
+                    <div class="alert alert-danger mt-3" role="alert">@commentErrorMessage</div>
+                }
+            </Authorized>
+            <NotAuthorized>
+                <p><a href="login">Log in</a> to add a comment.</p>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    [CascadingParameter]
+    public Task<AuthenticationState> State { get; set; } = null!;
+
+    private PostDto? post;
+    private List<CommentDto> comments = [];
+    private string commentBody = "";
+    private string? loadErrorMessage;
+    private string? commentErrorMessage;
+    private bool isSubmitting;
+    private bool isEditing;
+    private bool isSaving;
+    private string editTitle = "";
+    private string editBody = "";
+    private string? editErrorMessage;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        post = null;
+        loadErrorMessage = null;
+
+        try
+        {
+            post = await PostService.GetPostAsync(Id);
+            comments = post.Comments ?? [];
+        }
+        catch (Exception e)
+        {
+            loadErrorMessage = e.Message;
+        }
+    }
+
+    private void StartEditing()
+    {
+        editTitle = post!.Title;
+        editBody = post.Body;
+        editErrorMessage = null;
+        isEditing = true;
+    }
+
+    private async Task SavePostAsync()
+    {
+        editErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(editTitle) || string.IsNullOrWhiteSpace(editBody))
+        {
+            editErrorMessage = "Enter both a title and a body.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            PostDto updated = await PostService.UpdatePostAsync(Id, new UpdatePostDto
+            {
+                Title = editTitle,
+                Body = editBody
+            });
+            post!.Title = updated.Title;
+            post.Body = updated.Body;
+            isEditing = false;
+        }
+        catch (Exception e)
+        {
+            editErrorMessage = e.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task AddCommentAsync()
+    {
+        commentErrorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(commentBody))
+        {
+            commentErrorMessage = "Enter a comment.";
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            AuthenticationState authState = await State;
+            CommentDto created = await CommentService.AddCommentAsync(new CreateCommentDto
+            {
+                Body = commentBody,
+                PostId = Id,
+                UserId = authState.User.GetUserId()
+            });
+            comments.Add(created);
+            commentBody = "";
+        }
+        catch (Exception e)
+        {
+            commentErrorMessage = e.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

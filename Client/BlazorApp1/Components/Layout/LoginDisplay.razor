@@ -1,0 +1,18 @@
+@inject AuthenticationStateProvider AuthProvider
+
+<AuthorizeView>
+    <Authorized>
+        <span>Hello, @context.User.Identity?.Name</span>
+        <button class="btn btn-link" type="button" @onclick="LogoutAsync">Log out</button>
+    </Authorized>
+    <NotAuthorized>
+        <a href="login">Log in</a>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private async Task LogoutAsync()
+    {
+        await ((SimpleAuthProvider)AuthProvider).LogoutAsync();
+    }
+}

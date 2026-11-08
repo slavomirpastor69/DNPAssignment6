@@ -1,0 +1,55 @@
+@WebAPI_HostAddress = http://localhost:5000
+
+### Create user
+POST {{WebAPI_HostAddress}}/Users
+Content-Type: application/json
+
+{ "userName": "miro", "password": "1234" }
+
+### Get users (filter by username)
+GET {{WebAPI_HostAddress}}/Users?userName=mi
+
+### Update user
+PUT {{WebAPI_HostAddress}}/Users/1
+Content-Type: application/json
+
+{ "userName": "miro2", "password": "abcd" }
+
+### Create post
+POST {{WebAPI_HostAddress}}/Posts
+Content-Type: application/json
+
+{ "title": "Hello world", "body": "My first post", "userId": 1 }
+
+### Get posts (filter by title, userId, userName)
+GET {{WebAPI_HostAddress}}/Posts?title=hello&userName=miro
+
+### Get single post with comments
+GET {{WebAPI_HostAddress}}/Posts/1
+
+### Get comments of a post (nested route)
+GET {{WebAPI_HostAddress}}/Posts/1/Comments
+
+### Create comment
+POST {{WebAPI_HostAddress}}/Comments
+Content-Type: application/json
+
+{ "body": "Nice post", "postId": 1, "userId": 1 }
+
+### Get comments (filter by userId, userName, postId)
+GET {{WebAPI_HostAddress}}/Comments?postId=1&userName=miro
+
+### Update comment
+PUT {{WebAPI_HostAddress}}/Comments/1
+Content-Type: application/json
+
+{ "body": "Edited comment" }
+
+### Delete comment
+DELETE {{WebAPI_HostAddress}}/Comments/1
+
+### Delete post (also deletes its comments)
+DELETE {{WebAPI_HostAddress}}/Posts/1
+
+### Delete user
+DELETE {{WebAPI_HostAddress}}/Users/1

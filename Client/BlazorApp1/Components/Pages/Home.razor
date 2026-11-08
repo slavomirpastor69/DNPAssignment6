@@ -1,0 +1,14 @@
+﻿@page "/"
+
+<PageTitle>Home</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>Welcome, @context.User.Identity?.Name</h1>
+        <p>Browse the <a href="posts">posts</a> or <a href="posts/create">create a post</a>.</p>
+    </Authorized>
+    <NotAuthorized>
+        <h1>Welcome</h1>
+        <p>Browse the <a href="posts">posts</a>, <a href="login">log in</a>, or <a href="users/create">add a user</a>.</p>
+    </NotAuthorized>
+</AuthorizeView>

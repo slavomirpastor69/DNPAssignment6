@@ -1,0 +1,62 @@
+@page "/login"
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Navigation
+
+<PageTitle>Log in</PageTitle>
+
+<AuthorizeView>
+    <NotAuthorized>
+        <h1>Log in</h1>
+
+        <form @onsubmit="LoginAsync" style="max-width: 30rem">
+            <div class="mb-3">
+                <label class="form-label" for="userName">Username</label>
+                <input class="form-control" id="userName" @bind="userName" autocomplete="username"/>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="password">Password</label>
+                <input class="form-control" id="password" type="password" @bind="password" autocomplete="current-password"/>
+            </div>
+
+            <button class="btn btn-primary" type="submit" disabled="@isSubmitting">Log in</button>
+        </form>
+
+        @if (errorMessage != null)
+        {
+            <div class="alert alert-danger mt-3" role="alert" style="max-width: 30rem">@errorMessage</div>
+        }
+
+        <p class="mt-3">Don't have a user yet? <a href="users/create">Add a user</a>.</p>
+    </NotAuthorized>
+    <Authorized>
+        <h1>Hello, @context.User.Identity?.Name</h1>
+        <p>You are logged in.</p>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private string userName = "";
+    private string password = "";
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task LoginAsync()
+    {
+        errorMessage = null;
+        isSubmitting = true;
+        try
+        {
+            await ((SimpleAuthProvider)AuthProvider).LoginAsync(userName, password);
+            Navigation.NavigateTo("");
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

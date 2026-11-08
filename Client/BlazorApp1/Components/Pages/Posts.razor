@@ -1,0 +1,52 @@
+@page "/posts"
+@inject IPostService PostService
+
+<PageTitle>Posts</PageTitle>
+
+<h1>Posts</h1>
+
+<AuthorizeView>
+    <p><a class="btn btn-primary" href="posts/create">Create post</a></p>
+</AuthorizeView>
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger" role="alert">@errorMessage</div>
+}
+else if (posts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (posts.Count == 0)
+{
+    <p>There are no posts yet.</p>
+}
+else
+{
+    <div class="list-group" style="max-width: 45rem">
+        @foreach (PostDto post in posts)
+        {
+            <a class="list-group-item list-group-item-action" href="posts/@post.Id">
+                <div class="fw-semibold">@post.Title</div>
+                <small class="text-body-secondary">by @(post.AuthorName ?? "Unknown user")</small>
+            </a>
+        }
+    </div>
+}
+
+@code {
+    private List<PostDto>? posts;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            posts = await PostService.GetPostsAsync();
+        }
+        catch (Exception e)
+        {
+            errorMessage = e.Message;
+        }
+    }
+}
